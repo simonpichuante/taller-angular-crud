@@ -1,0 +1,8 @@
+﻿<div [attr.inert]="carga.activa() ? '' : null">
+  <app-menu />
+  <main class="contenido">
+    <router-outlet />
+  </main>
+</div>
+<app-carga />
+<app-alertas />

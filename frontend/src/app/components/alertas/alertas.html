@@ -1,0 +1,8 @@
+﻿<div class="alertas">
+  @for (alerta of servicio.alertas(); track alerta.id) {
+    <div [class]="'alerta ' + alerta.tipo" role="alert">
+      <span>{{ alerta.mensaje }}</span>
+      <button type="button" aria-label="Cerrar" (click)="servicio.cerrar(alerta.id)">×</button>
+    </div>
+  }
+</div>

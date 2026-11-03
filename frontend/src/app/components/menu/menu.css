@@ -1,0 +1,26 @@
+﻿header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 24px;
+  background: #143c42;
+  color: #fff;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+a {
+  color: #dfecec;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a.activo {
+  color: #fff;
+  text-decoration: underline;
+}

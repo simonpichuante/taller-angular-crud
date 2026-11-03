@@ -1,0 +1,33 @@
+﻿.alertas {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1100;
+  display: grid;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.alerta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  color: #fff;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 20%);
+}
+
+.exito { background: #1b7a43; }
+.error { background: #b3261e; }
+.advertencia { background: #9a6200; }
+.info { background: #1d63a8; }
+
+button {
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 1.2rem;
+  padding: 0 4px;
+}

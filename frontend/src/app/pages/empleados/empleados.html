@@ -1,0 +1,133 @@
+﻿<h1>Empleados</h1>
+<form class="formulario" #f="ngForm" (ngSubmit)="guardar()">
+  <h2>{{ editandoId() ? 'Editar empleado' : 'Nuevo empleado' }}</h2>
+  <div class="campos">
+    <label>
+      RUT
+      <input name="rut" placeholder="12345678-5" [(ngModel)]="form.rut" required />
+    </label>
+    <label>
+      Nombres
+      <input name="nombres" [(ngModel)]="form.nombres" required />
+    </label>
+    <label>
+      Apellidos
+      <input name="apellidos" [(ngModel)]="form.apellidos" required />
+    </label>
+    <label>
+      Correo
+      <input type="email" name="email" [(ngModel)]="form.email" required email />
+    </label>
+    <label>
+      Teléfono
+      <input name="telefono" [(ngModel)]="form.telefono" />
+    </label>
+    <label>
+      Dirección
+      <input name="direccion" [(ngModel)]="form.direccion" />
+    </label>
+    <label>
+      Fecha de ingreso
+      <input type="date" name="fecha_ingreso" [(ngModel)]="form.fecha_ingreso" required />
+    </label>
+    <label>
+      Sueldo
+      <input type="number" name="sueldo" min="0" [(ngModel)]="form.sueldo" required />
+    </label>
+    <label>
+      Departamento
+      <select name="departamento_id" [(ngModel)]="form.departamento_id" required>
+        <option [ngValue]="null">Seleccione</option>
+        @for (departamento of departamentos(); track departamento.id) {
+          <option [ngValue]="departamento.id">{{ departamento.nombre }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Cargo
+      <select name="cargo_id" [(ngModel)]="form.cargo_id" required>
+        <option [ngValue]="null">Seleccione</option>
+        @for (cargo of cargos(); track cargo.id) {
+          <option [ngValue]="cargo.id">{{ cargo.nombre }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Región
+      <select name="region" [ngModel]="regionId" (ngModelChange)="cambiarRegion($event)" required>
+        <option [ngValue]="null">Seleccione</option>
+        @for (region of regiones(); track region.id) {
+          <option [ngValue]="region.id">{{ region.nombre }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Provincia
+      <select name="provincia" [ngModel]="provinciaId" (ngModelChange)="cambiarProvincia($event)" required>
+        <option [ngValue]="null">Seleccione</option>
+        @for (provincia of provincias(); track provincia.id) {
+          <option [ngValue]="provincia.id">{{ provincia.nombre }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Comuna
+      <select name="comuna_id" [(ngModel)]="form.comuna_id" required>
+        <option [ngValue]="null">Seleccione</option>
+        @for (comuna of comunas(); track comuna.id) {
+          <option [ngValue]="comuna.id">{{ comuna.nombre }}</option>
+        }
+      </select>
+    </label>
+    <label class="check">
+      <input type="checkbox" name="activo" [(ngModel)]="form.activo" />
+      Activo
+    </label>
+  </div>
+  <div class="acciones">
+    <button type="submit" class="principal" [disabled]="f.invalid">Guardar</button>
+    <button type="button" (click)="limpiar()">Cancelar</button>
+  </div>
+</form>
+
+<form class="busqueda" (ngSubmit)="cargar()">
+  <input placeholder="Buscar por nombre o RUT" name="buscar" [(ngModel)]="buscar" />
+  <button type="submit">Buscar</button>
+</form>
+<div class="tabla">
+  <table>
+    <thead>
+      <tr>
+        <th>RUT</th>
+        <th>Nombre</th>
+        <th>Departamento</th>
+        <th>Cargo</th>
+        <th>Comuna</th>
+        <th>Sueldo</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (empleado of empleados(); track empleado.id) {
+        <tr>
+          <td>{{ empleado.rut }}</td>
+          <td>{{ empleado.nombres }} {{ empleado.apellidos }}</td>
+          <td>{{ empleado.departamento }}</td>
+          <td>{{ empleado.cargo }}</td>
+          <td>{{ empleado.comuna }}</td>
+          <td>$ {{ empleado.sueldo?.toLocaleString('es-CL') }}</td>
+          <td>{{ empleado.activo ? 'Activo' : 'Inactivo' }}</td>
+          <td>
+            <button (click)="editar(empleado)">Editar</button>
+            <button (click)="eliminar(empleado)">Eliminar</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="8">No hay empleados.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,44 @@
+﻿<h1>Cargos</h1>
+<form class="formulario" #f="ngForm" (ngSubmit)="guardar()">
+  <h2>{{ editandoId() ? 'Editar' : 'Nuevo' }}</h2>
+  <label>
+    Nombre
+    <input name="nombre" [(ngModel)]="form.nombre" required />
+  </label>
+  <label>
+    Descripción
+    <input name="descripcion" [(ngModel)]="form.descripcion" />
+  </label>
+  <div class="acciones">
+    <button type="submit" class="principal" [disabled]="f.invalid">Guardar</button>
+    <button type="button" (click)="limpiar()">Cancelar</button>
+  </div>
+</form>
+<input class="buscador" placeholder="Buscar por nombre" name="buscar" [(ngModel)]="buscar" />
+<div class="tabla">
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of filtrados(); track item.id) {
+        <tr>
+          <td>{{ item.nombre }}</td>
+          <td>{{ item.descripcion }}</td>
+          <td>
+            <button (click)="editar(item)">Editar</button>
+            <button (click)="eliminar(item)">Eliminar</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="3">No hay registros.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
