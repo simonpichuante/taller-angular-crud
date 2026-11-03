@@ -104,6 +104,9 @@ export class Empleados implements OnInit {
       departamento_id: empleado.departamento_id,
     };
     this.editandoId.set(empleado.id);
+    if (empleado.comuna_id === null) {
+      return;
+    }
     this.territorio.comuna(empleado.comuna_id).subscribe({
       next: (comuna) => {
         this.regionId = comuna.region_id;
