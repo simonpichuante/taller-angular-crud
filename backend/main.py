@@ -5,7 +5,7 @@ from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -62,74 +62,118 @@ def startup_event() -> None:
 
 
 def seed_base_data() -> None:
-    from database import SessionLocal
+    try:
+        from .database import SessionLocal
+        from .territorio_data import TERRITORIO_DPA
+    except ImportError:
+        from database import SessionLocal
+        from territorio_data import TERRITORIO_DPA
 
     db = SessionLocal()
     try:
-        regions = db.execute(select(RegionModel)).scalars().all()
-        if not regions:
-            data = [
-                RegionModel(id=1, numero_romano='I', nombre='Tarapacá'),
-                RegionModel(id=2, numero_romano='II', nombre='Antofagasta'),
-                RegionModel(id=3, numero_romano='III', nombre='Atacama'),
-                RegionModel(id=4, numero_romano='IV', nombre='Coquimbo'),
-                RegionModel(id=5, numero_romano='V', nombre='Valparaíso'),
-                RegionModel(id=6, numero_romano='VI', nombre='Libertador General Bernardo O’Higgins'),
-                RegionModel(id=7, numero_romano='VII', nombre='Maule'),
-                RegionModel(id=8, numero_romano='VIII', nombre='Biobío'),
-                RegionModel(id=9, numero_romano='IX', nombre='La Araucanía'),
-                RegionModel(id=10, numero_romano='X', nombre='Los Lagos'),
-                RegionModel(id=11, numero_romano='XI', nombre='Aysén'),
-                RegionModel(id=12, numero_romano='XII', nombre='Magallanes y Antártica Chilena'),
-                RegionModel(id=13, numero_romano='XIII', nombre='Metropolitana de Santiago'),
-                RegionModel(id=14, numero_romano='XIV', nombre='Los Ríos'),
-                RegionModel(id=15, numero_romano='XV', nombre='Arica y Parinacota'),
-                RegionModel(id=16, numero_romano='XVI', nombre='Ñuble'),
-            ]
-            db.add_all(data)
+        sincronizar_secuencias_postgres(db)
 
-        provinces = db.execute(select(ProvinciaModel)).scalars().all()
-        if not provinces:
-            db.add_all(
-                [
-                    ProvinciaModel(id=1, nombre='Iquique', region_id=1),
-                    ProvinciaModel(id=2, nombre='Antofagasta', region_id=2),
-                    ProvinciaModel(id=3, nombre='Santiago', region_id=13),
-                    ProvinciaModel(id=4, nombre='Concepción', region_id=8),
-                    ProvinciaModel(id=5, nombre='Valdivia', region_id=14),
-                ]
-            )
+        region_data = [
+            (1, 'I', 'Tarapacá'),
+            (2, 'II', 'Antofagasta'),
+            (3, 'III', 'Atacama'),
+            (4, 'IV', 'Coquimbo'),
+            (5, 'V', 'Valparaíso'),
+            (6, 'VI', 'Libertador General Bernardo O’Higgins'),
+            (7, 'VII', 'Maule'),
+            (8, 'VIII', 'Biobío'),
+            (9, 'IX', 'La Araucanía'),
+            (10, 'X', 'Los Lagos'),
+            (11, 'XI', 'Aysén'),
+            (12, 'XII', 'Magallanes y Antártica Chilena'),
+            (13, 'XIII', 'Metropolitana de Santiago'),
+            (14, 'XIV', 'Los Ríos'),
+            (15, 'XV', 'Arica y Parinacota'),
+            (16, 'XVI', 'Ñuble'),
+        ]
+        region_ids = set(db.execute(select(RegionModel.id)).scalars())
+        db.add_all(
+            RegionModel(id=region_id, numero_romano=numero_romano, nombre=nombre)
+            for region_id, numero_romano, nombre in region_data
+            if region_id not in region_ids
+        )
+        db.flush()
 
-        communes = db.execute(select(ComunaModel)).scalars().all()
-        if not communes:
-            db.add_all(
-                [
-                    ComunaModel(id=1, nombre='Iquique', provincia_id=1),
-                    ComunaModel(id=2, nombre='Antofagasta', provincia_id=2),
-                    ComunaModel(id=3, nombre='Santiago', provincia_id=3),
-                    ComunaModel(id=4, nombre='Concepción', provincia_id=4),
-                    ComunaModel(id=5, nombre='Valdivia', provincia_id=5),
-                ]
-            )
+        provincias_por_clave = {
+            (provincia.region_id, provincia.nombre): provincia
+            for provincia in db.execute(select(ProvinciaModel)).scalars()
+        }
+        for region_id, provincias in TERRITORIO_DPA.items():
+            for nombre, _ in provincias:
+                clave = (region_id, nombre)
+                if clave not in provincias_por_clave:
+                    provincia = ProvinciaModel(nombre=nombre, region_id=region_id)
+                    db.add(provincia)
+                    provincias_por_clave[clave] = provincia
+        db.flush()
 
-        if db.execute(select(DepartamentoModel.id)).first() is None:
-            db.add_all([
-                DepartamentoModel(id=1, nombre='Tecnología', descripcion='Equipo de software'),
-                DepartamentoModel(id=2, nombre='Recursos Humanos', descripcion='Gestión de personas'),
-                DepartamentoModel(id=3, nombre='Administración', descripcion='Soporte financiero y administrativo'),
-            ])
+        comunas_existentes = {
+            (comuna.provincia_id, comuna.nombre)
+            for comuna in db.execute(select(ComunaModel)).scalars()
+        }
+        comunas_nuevas = []
+        for region_id, provincias in TERRITORIO_DPA.items():
+            for nombre_provincia, nombres_comunas in provincias:
+                provincia = provincias_por_clave[(region_id, nombre_provincia)]
+                for nombre_comuna in nombres_comunas:
+                    clave = (provincia.id, nombre_comuna)
+                    if clave not in comunas_existentes:
+                        comunas_nuevas.append(
+                            ComunaModel(nombre=nombre_comuna, provincia_id=provincia.id)
+                        )
+                        comunas_existentes.add(clave)
+        db.add_all(comunas_nuevas)
+        db.flush()
 
-        if db.execute(select(CargoModel.id)).first() is None:
-            db.add_all([
-                CargoModel(id=1, nombre='Desarrollador', descripcion='Desarrollo de software'),
-                CargoModel(id=2, nombre='Analista', descripcion='Análisis de negocio'),
-                CargoModel(id=3, nombre='Administrador', descripcion='Administración de procesos'),
-            ])
+        departamentos = {
+            departamento.nombre
+            for departamento in db.execute(select(DepartamentoModel)).scalars()
+        }
+        departamento_data = [
+            ('Tecnología', 'Equipo de software'),
+            ('Recursos Humanos', 'Gestión de personas'),
+            ('Administración', 'Soporte financiero y administrativo'),
+        ]
+        db.add_all(
+            DepartamentoModel(nombre=nombre, descripcion=descripcion)
+            for nombre, descripcion in departamento_data
+            if nombre not in departamentos
+        )
+
+        cargos = {cargo.nombre for cargo in db.execute(select(CargoModel)).scalars()}
+        cargo_data = [
+            ('Desarrollador', 'Desarrollo de software'),
+            ('Analista', 'Análisis de negocio'),
+            ('Administrador', 'Administración de procesos'),
+        ]
+        db.add_all(
+            CargoModel(nombre=nombre, descripcion=descripcion)
+            for nombre, descripcion in cargo_data
+            if nombre not in cargos
+        )
+        db.flush()
 
         if db.execute(select(EmpleadoModel.id)).first() is None:
+            provincia_santiago = provincias_por_clave[(13, 'Santiago')]
+            comuna_santiago = db.execute(
+                select(ComunaModel).where(
+                    ComunaModel.provincia_id == provincia_santiago.id,
+                    ComunaModel.nombre == 'Santiago',
+                )
+            ).scalar_one()
+            departamento_id = db.execute(
+                select(DepartamentoModel.id).where(DepartamentoModel.nombre == 'Tecnología')
+            ).scalar_one()
+            cargo_id = db.execute(
+                select(CargoModel.id).where(CargoModel.nombre == 'Desarrollador')
+            ).scalar_one()
             db.add(
                 EmpleadoModel(
-                    id=1,
                     rut='12345678-5',
                     nombres='Ana',
                     apellidos='García',
@@ -139,15 +183,35 @@ def seed_base_data() -> None:
                     fecha_ingreso=date(2024, 1, 10),
                     sueldo=1500000,
                     activo=True,
-                    comuna_id=3,
-                    cargo_id=1,
-                    departamento_id=1,
+                    comuna_id=comuna_santiago.id,
+                    cargo_id=cargo_id,
+                    departamento_id=departamento_id,
                 )
             )
 
         db.commit()
+        sincronizar_secuencias_postgres(db)
+        db.commit()
     finally:
         db.close()
+
+
+def sincronizar_secuencias_postgres(db: Session) -> None:
+    """Alinea los SERIAL con los IDs existentes, incluidas las filas semilla."""
+    if db.get_bind().dialect.name != 'postgresql':
+        return
+
+    tablas = ('regiones', 'provincias', 'comunas', 'departamentos', 'cargos', 'empleados')
+    for tabla in tablas:
+        db.execute(
+            text(
+                f"""SELECT setval(
+                    pg_get_serial_sequence('{tabla}', 'id'),
+                    COALESCE(MAX(id), 1),
+                    MAX(id) IS NOT NULL
+                ) FROM {tabla}"""
+            )
+        )
 
 
 @app.get('/regiones', response_model=List[RegionSchema])

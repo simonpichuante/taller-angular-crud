@@ -72,7 +72,7 @@ La base se levanta con Docker Compose y usa esta configuración:
 URL de conexión de ejemplo:
 
 ```text
-postgresql://postgres:postgres@localhost:5432/empleados_db
+postgresql+psycopg://postgres:postgres@localhost:5432/empleados_db
 ```
 
 ### Backend FastAPI
@@ -145,7 +145,7 @@ python -m pip install -r requirements.txt
 Configura la variable de entorno de conexión a PostgreSQL:
 
 ```powershell
-$env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/empleados_db"
+$env:DATABASE_URL = "postgresql+psycopg://postgres:postgres@localhost:5432/empleados_db"
 ```
 
 Y levantá la API:
@@ -233,7 +233,7 @@ Al iniciar la API, si la base está vacía, se insertan datos base como:
 El backend tiene un ejemplo en `backend/.env.example`:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/empleados_db
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/empleados_db
 APP_ENV=development
 ```
 
@@ -264,7 +264,7 @@ docker logs taller-angular-crud-db
 ```powershell
 cd C:\development\taller-angular-crud\backend
 . .\.venv\Scripts\Activate.ps1
-$env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/empleados_db"
+$env:DATABASE_URL = "postgresql+psycopg://postgres:postgres@localhost:5432/empleados_db"
 python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
