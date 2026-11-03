@@ -8,6 +8,7 @@ Este proyecto consiste en una aplicación CRUD completa con:
 
 ## Stack tecnológico
 
+
 - Angular 22
 - FastAPI
 - SQLAlchemy
